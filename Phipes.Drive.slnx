@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Phipes.Drive.Core/Phipes.Drive.Core.csproj" />
+    <Project Path="src/Phipes.Drive.Web/Phipes.Drive.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Phipes.Drive.Tests/Phipes.Drive.Tests.csproj" />
+  </Folder>
+</Solution>
