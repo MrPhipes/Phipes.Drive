@@ -43,6 +43,33 @@ On first run the app creates a SQLite database and the admin user from the
 variables `Admin__Email` / `Admin__Password`, or appsettings). Registration is
 closed once a user exists.
 
+## Deploy with Docker
+
+Every push to `main` publishes an image to GitHub Container Registry:
+`ghcr.io/mrphipes/phipes-drive` (tags: `latest` and the short commit SHA).
+
+Use the example [`docker-compose.yml`](docker-compose.yml) in this repo. Create
+a `.env` file next to it with the admin credentials for the first run:
+
+```bash
+ADMIN_EMAIL=you@example.com
+ADMIN_PASSWORD=YourStrongPassword1
+```
+
+Then start the app:
+
+```bash
+docker compose up -d
+```
+
+The app listens on port 8080. User files go to the `./storage` volume and the
+SQLite database to `./db`. The container runs as a non-root user (UID 1654),
+so make sure both folders are writable by it:
+
+```bash
+chown -R 1654:1654 ./storage ./db
+```
+
 ## Authentication
 
 Browsers use cookie sign-in via the `/login` page. API clients (the future

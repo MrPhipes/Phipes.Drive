@@ -1,0 +1,27 @@
+# Example deployment for Phipes.Drive (e.g. on a NAS running Docker).
+#
+# 1. Create a .env file next to this compose file (never commit it):
+#      ADMIN_EMAIL=you@example.com
+#      ADMIN_PASSWORD=YourStrongPassword1
+# 2. Make sure the mounted folders are writable by UID 1654 (the non-root
+#    "app" user inside the image), e.g.: chown -R 1654:1654 ./storage ./db
+# 3. Run: docker compose up -d
+
+services:
+  phipes-drive:
+    image: ghcr.io/mrphipes/phipes-drive:latest
+    container_name: phipes-drive
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Where user files are stored (inside the container)
+      Storage__RootPath: /data/storage
+      # SQLite database location (inside the container)
+      ConnectionStrings__Default: "Data Source=/data/db/phipes-drive.db"
+      # Admin user created on first run (values come from .env)
+      Admin__Email: ${ADMIN_EMAIL}
+      Admin__Password: ${ADMIN_PASSWORD}
+    volumes:
+      - ./storage:/data/storage
+      - ./db:/data/db

@@ -1,0 +1,34 @@
+# Build output
+**/bin/
+**/obj/
+**/out/
+
+# Version control and CI
+.git/
+.github/
+.gitignore
+.gitattributes
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Local data (never bake into the image)
+storage/
+*.db
+*.db-shm
+*.db-wal
+.env
+
+# Docker files themselves
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Docs and tests (not needed to publish the web app)
+README.md
+LICENSE
+tests/
