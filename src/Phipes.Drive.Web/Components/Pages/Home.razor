@@ -1,6 +1,7 @@
 @page "/"
 @page "/browse/{*Path}"
 @rendermode InteractiveServer
+@attribute [Authorize]
 @using Phipes.Drive.Core.Storage
 @inject IFileStorage Storage
 @inject NavigationManager Nav
@@ -9,12 +10,18 @@
 
 <header class="drive-header">
     <h1>Phipes Drive</h1>
-    @if (_usage is not null)
-    {
-        <span class="usage">
-            @FormatSize(_usage.UsedBytes) usados@(_usage.QuotaBytes is { } q ? $" de {FormatSize(q)}" : "")
-        </span>
-    }
+    <span class="header-right">
+        @if (_usage is not null)
+        {
+            <span class="usage">
+                @FormatSize(_usage.UsedBytes) usados@(_usage.QuotaBytes is { } q ? $" de {FormatSize(q)}" : "")
+            </span>
+        }
+        <form method="post" action="/auth/logout" class="logout-form">
+            <AntiforgeryToken />
+            <button type="submit" class="logout">Salir</button>
+        </form>
+    </span>
 </header>
 
 <nav class="breadcrumb">

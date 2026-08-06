@@ -483,3 +483,8 @@ $RECYCLE.BIN/
 
 # Phipes Drive local storage
 data/
+
+# Local database
+*.db
+*.db-shm
+*.db-wal

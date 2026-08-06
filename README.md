@@ -33,7 +33,36 @@ Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 ```bash
 git clone <repo-url>
 cd Phipes.Drive
+dotnet user-secrets set "Admin:Email" "you@example.com" --project src/Phipes.Drive.Web
+dotnet user-secrets set "Admin:Password" "YourStrongPassword1" --project src/Phipes.Drive.Web
 dotnet run --project src/Phipes.Drive.Web
+```
+
+On first run the app creates a SQLite database and the admin user from the
+`Admin:Email` / `Admin:Password` configuration (user secrets, environment
+variables `Admin__Email` / `Admin__Password`, or appsettings). Registration is
+closed once a user exists.
+
+## Authentication
+
+Browsers use cookie sign-in via the `/login` page. API clients (the future
+mobile backup app, scripts, integrations) use bearer tokens:
+
+```bash
+# Obtain tokens
+curl -X POST http://localhost:5000/api/identity/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@example.com","password":"YourStrongPassword1"}'
+# → { "accessToken": "...", "expiresIn": 3600, "refreshToken": "..." }
+
+# Call the API
+curl -H "Authorization: Bearer <accessToken>" \
+  "http://localhost:5000/api/download?path=docs/report.pdf"
+
+# Renew without re-sending credentials
+curl -X POST http://localhost:5000/api/identity/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refreshToken":"<refreshToken>"}'
 ```
 
 Storage location and limits are configured in `appsettings.json` (defaults to a local `data/` folder for development):
