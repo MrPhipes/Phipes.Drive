@@ -36,3 +36,25 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+/* ---- Phipes Drive ---- */
+body { font-family: system-ui, sans-serif; margin: 0 auto; max-width: 960px; padding: 1rem 1.5rem; color: #1c2733; }
+.drive-header { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid #0b5cad; padding-bottom: .5rem; }
+.drive-header h1 { font-size: 1.4rem; margin: 0; color: #0b5cad; }
+.usage { color: #5a6b7b; font-size: .9rem; }
+.breadcrumb { margin: .75rem 0; display: flex; gap: .35rem; flex-wrap: wrap; font-size: .95rem; }
+.breadcrumb a { color: #0b5cad; text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+.toolbar { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+.toolbar input[type=text], .toolbar input:not([type]) { padding: .35rem .5rem; border: 1px solid #c4ced8; border-radius: 4px; }
+.toolbar button { padding: .4rem .8rem; border: none; border-radius: 4px; background: #0b5cad; color: #fff; cursor: pointer; }
+.toolbar button:disabled { background: #c4ced8; cursor: default; }
+.toolbar button.secondary { background: #5a6b7b; }
+.status { background: #eef5fc; border-left: 3px solid #0b5cad; padding: .5rem .75rem; }
+table.items { width: 100%; border-collapse: collapse; }
+table.items th { text-align: left; font-size: .8rem; text-transform: uppercase; color: #5a6b7b; border-bottom: 1px solid #dde5ec; padding: .4rem .5rem; }
+table.items td { padding: .45rem .5rem; border-bottom: 1px solid #eef1f5; }
+table.items a { color: #1c2733; text-decoration: none; }
+table.items a:hover { color: #0b5cad; }
+table.items button { padding: .25rem .6rem; border: 1px solid #c4ced8; border-radius: 4px; background: #fff; cursor: pointer; }
+table.items button.danger:hover { background: #fbe9e9; border-color: #c0392b; color: #c0392b; }
+td.empty { text-align: center; color: #8a97a5; padding: 2rem 0 !important; }

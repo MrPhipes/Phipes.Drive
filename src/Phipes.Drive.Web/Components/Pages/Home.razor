@@ -1,7 +1,194 @@
-﻿@page "/"
+@page "/"
+@page "/browse/{*Path}"
+@rendermode InteractiveServer
+@using Phipes.Drive.Core.Storage
+@inject IFileStorage Storage
+@inject NavigationManager Nav
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Phipes Drive</PageTitle>
 
-<h1>Hello, world!</h1>
+<header class="drive-header">
+    <h1>Phipes Drive</h1>
+    @if (_usage is not null)
+    {
+        <span class="usage">
+            @FormatSize(_usage.UsedBytes) usados@(_usage.QuotaBytes is { } q ? $" de {FormatSize(q)}" : "")
+        </span>
+    }
+</header>
 
-Welcome to your new app.
+<nav class="breadcrumb">
+    <a href="/">Inicio</a>
+    @{ var crumb = ""; }
+    @foreach (var part in Segments)
+    {
+        crumb = crumb.Length == 0 ? part : $"{crumb}/{part}";
+        <span>/</span>
+        <a href="/browse/@crumb">@part</a>
+    }
+</nav>
+
+<div class="toolbar">
+    <InputFile OnChange="UploadAsync" multiple />
+    <input placeholder="Nueva carpeta" @bind="_newFolderName" />
+    <button @onclick="CreateFolderAsync" disabled="@string.IsNullOrWhiteSpace(_newFolderName)">Crear carpeta</button>
+    <button class="secondary" @onclick="ToggleTrashAsync">@(_showTrash ? "Volver a archivos" : $"Papelera")</button>
+</div>
+
+@if (_status is not null)
+{
+    <p class="status">@_status</p>
+}
+
+@if (_showTrash)
+{
+    <table class="items">
+        <thead><tr><th>Ruta original</th><th>Eliminado</th><th>Tamaño</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var entry in _trash)
+        {
+            <tr>
+                <td>@entry.OriginalPath</td>
+                <td>@entry.DeletedUtc.ToLocalTime().ToString("g")</td>
+                <td>@FormatSize(entry.SizeBytes)</td>
+                <td><button @onclick="() => RestoreAsync(entry.Id)">Restaurar</button></td>
+            </tr>
+        }
+        @if (_trash.Count == 0)
+        {
+            <tr><td colspan="4" class="empty">La papelera está vacía</td></tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <table class="items">
+        <thead><tr><th>Nombre</th><th>Modificado</th><th>Tamaño</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var item in _items)
+        {
+            <tr>
+                <td>
+                    @if (item.IsFolder)
+                    {
+                        <a href="/browse/@item.RelativePath">📁 @item.Name</a>
+                    }
+                    else
+                    {
+                        <a href="/api/download?path=@Uri.EscapeDataString(item.RelativePath)" target="_blank">📄 @item.Name</a>
+                    }
+                </td>
+                <td>@item.ModifiedUtc.ToLocalTime().ToString("g")</td>
+                <td>@(item.IsFolder ? "—" : FormatSize(item.SizeBytes))</td>
+                <td><button class="danger" @onclick="() => TrashAsync(item.RelativePath)">Eliminar</button></td>
+            </tr>
+        }
+        @if (_items.Count == 0)
+        {
+            <tr><td colspan="4" class="empty">Carpeta vacía — sube algo con el botón de arriba</td></tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private const long MaxUploadBytes = 10L * 1024 * 1024 * 1024;
+
+    [Parameter] public string? Path { get; set; }
+
+    private IReadOnlyList<StorageItem> _items = [];
+    private IReadOnlyList<TrashEntry> _trash = [];
+    private StorageUsage? _usage;
+    private string _newFolderName = "";
+    private string? _status;
+    private bool _showTrash;
+
+    private string CurrentPath => Path ?? "";
+    private string[] Segments => CurrentPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _showTrash = false;
+        await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        try
+        {
+            _items = await Storage.ListAsync(CurrentPath);
+            _usage = await Storage.GetUsageAsync();
+            _status = null;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            Nav.NavigateTo("/");
+        }
+        catch (StoragePathException)
+        {
+            Nav.NavigateTo("/");
+        }
+    }
+
+    private async Task UploadAsync(InputFileChangeEventArgs e)
+    {
+        foreach (var file in e.GetMultipleFiles(50))
+        {
+            _status = $"Subiendo {file.Name}…";
+            StateHasChanged();
+            try
+            {
+                var target = CurrentPath.Length == 0 ? file.Name : $"{CurrentPath}/{file.Name}";
+                await using var stream = file.OpenReadStream(MaxUploadBytes);
+                await Storage.SaveAsync(target, stream);
+            }
+            catch (StorageQuotaExceededException)
+            {
+                _status = $"Sin espacio: no se pudo subir {file.Name}.";
+                return;
+            }
+        }
+        _status = null;
+        await RefreshAsync();
+    }
+
+    private async Task CreateFolderAsync()
+    {
+        var name = _newFolderName.Trim();
+        if (name.Length == 0) return;
+        var target = CurrentPath.Length == 0 ? name : $"{CurrentPath}/{name}";
+        await Storage.CreateFolderAsync(target);
+        _newFolderName = "";
+        await RefreshAsync();
+    }
+
+    private async Task TrashAsync(string relativePath)
+    {
+        await Storage.MoveToTrashAsync(relativePath);
+        _status = $"Movido a la papelera: {relativePath}";
+        await RefreshAsync();
+    }
+
+    private async Task ToggleTrashAsync()
+    {
+        _showTrash = !_showTrash;
+        if (_showTrash) _trash = await Storage.ListTrashAsync();
+        else await RefreshAsync();
+    }
+
+    private async Task RestoreAsync(string id)
+    {
+        await Storage.RestoreAsync(id);
+        _trash = await Storage.ListTrashAsync();
+        _status = "Elemento restaurado.";
+    }
+
+    private static string FormatSize(long bytes) => bytes switch
+    {
+        >= 1L << 30 => $"{bytes / (double)(1L << 30):N2} GB",
+        >= 1L << 20 => $"{bytes / (double)(1L << 20):N1} MB",
+        >= 1L << 10 => $"{bytes / (double)(1L << 10):N0} KB",
+        _ => $"{bytes} B",
+    };
+}
