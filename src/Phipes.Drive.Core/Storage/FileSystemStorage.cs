@@ -170,7 +170,10 @@ public sealed class FileSystemStorage : IFileStorage
     private string Resolve(string relativePath)
     {
         var raw = (relativePath ?? string.Empty).Replace('\\', '/');
-        if (raw.StartsWith('/') || Path.IsPathRooted(raw))
+        // Reject rooted paths from either platform convention, regardless of the OS we run on
+        // (on Linux, IsPathRooted does not flag "C:\..."). Rejecting ':' also blocks NTFS
+        // alternate data stream syntax like "file.txt:hidden".
+        if (raw.StartsWith('/') || raw.Contains(':') || Path.IsPathRooted(raw))
             throw new StoragePathException(relativePath!);
         var normalized = NormalizeRelative(raw);
 
