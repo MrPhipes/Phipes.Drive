@@ -5,7 +5,7 @@ public sealed class StorageOptions
     public const string SectionName = "Storage";
 
     /// <summary>Absolute or relative path of the storage root. Created if missing.</summary>
-    public string RootPath { get; set; } = "data";
+    public string RootPath { get; set; } = "storage";
 
     /// <summary>Optional hard quota for the whole storage, in bytes. Null = unlimited.</summary>
     public long? QuotaBytes { get; set; }

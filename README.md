@@ -65,13 +65,13 @@ curl -X POST http://localhost:5000/api/identity/refresh \
   -d '{"refreshToken":"<refreshToken>"}'
 ```
 
-Storage location and limits are configured in `appsettings.json` (defaults to a local `data/` folder for development):
+Storage location and limits are configured in `appsettings.json` (defaults to a local `storage/` folder for development):
 
 ```json
 {
   "Storage": {
-    "RootPath": "data",
-    "MaxQuotaBytes": null
+    "RootPath": "storage",
+    "QuotaBytes": null
   }
 }
 ```
