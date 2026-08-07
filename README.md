@@ -126,6 +126,27 @@ dotnet build src/Phipes.Drive.App/Phipes.Drive.App.csproj -f net10.0-android
 dotnet publish src/Phipes.Drive.App/Phipes.Drive.App.csproj -f net10.0-android -c Release
 ```
 
+### Release signing
+
+Create your own keystore once and keep it outside the repository — losing it
+means you can never ship an update to already-installed devices:
+
+```bash
+keytool -genkeypair -v -keystore phipes-drive-release.keystore \
+  -alias phipes-drive -keyalg RSA -keysize 4096 -validity 10950
+```
+
+Pass it at publish time; no signing values are stored in the project:
+
+```bash
+dotnet publish src/Phipes.Drive.App/Phipes.Drive.App.csproj -f net10.0-android -c Release \
+  -p:PhipesKeyStore=<path-to-keystore> -p:PhipesKeyStorePass=<password>
+```
+
+A release signature makes updates install over the existing app and gives the
+build a stable identity, but sideloaded APKs still show Android's "unknown
+sources" prompt — only distribution through an app store removes that.
+
 The `net10.0-ios` target is declared for future work but only activates on a
 macOS host with the `maui-ios` workload; the iOS media library backend is not
 implemented yet.

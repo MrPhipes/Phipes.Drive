@@ -22,6 +22,19 @@
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
+  <!-- Release signing. Point PhipesKeyStore at your own keystore (never commit one) and
+       supply the passwords out of band, e.g.:
+         dotnet publish ... -p:PhipesKeyStore=<path> -p:PhipesKeyStorePass=<pass>
+       Debug builds keep the default debug signature. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' and '$(PhipesKeyStore)' != '' and $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+    <AndroidKeyStore>true</AndroidKeyStore>
+    <AndroidSigningKeyStore>$(PhipesKeyStore)</AndroidSigningKeyStore>
+    <AndroidSigningKeyAlias Condition="'$(PhipesKeyAlias)' != ''">$(PhipesKeyAlias)</AndroidSigningKeyAlias>
+    <AndroidSigningKeyAlias Condition="'$(PhipesKeyAlias)' == ''">phipes-drive</AndroidSigningKeyAlias>
+    <AndroidSigningStorePass>$(PhipesKeyStorePass)</AndroidSigningStorePass>
+    <AndroidSigningKeyPass>$(PhipesKeyStorePass)</AndroidSigningKeyPass>
+  </PropertyGroup>
+
   <ItemGroup>
     <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#1565C0" />
     <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#1565C0" BaseSize="128,128" />
