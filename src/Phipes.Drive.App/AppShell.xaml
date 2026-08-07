@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:pages="clr-namespace:Phipes.Drive.App.Pages"
+       x:Class="Phipes.Drive.App.AppShell"
+       FlyoutBehavior="Disabled"
+       Shell.BackgroundColor="{StaticResource Primary}"
+       Shell.ForegroundColor="White"
+       Shell.TitleColor="White"
+       Shell.TabBarTitleColor="{StaticResource Primary}"
+       Shell.TabBarUnselectedColor="{StaticResource TextMuted}">
+
+    <ShellContent Route="login"
+                  Title="Iniciar sesión"
+                  Shell.NavBarIsVisible="False"
+                  Shell.TabBarIsVisible="False"
+                  ContentTemplate="{DataTemplate pages:LoginPage}" />
+
+    <TabBar>
+        <Tab Title="Respaldo">
+            <ShellContent Route="main"
+                          Title="Respaldo"
+                          ContentTemplate="{DataTemplate pages:MainPage}" />
+        </Tab>
+        <Tab Title="Ajustes">
+            <ShellContent Route="settings"
+                          Title="Ajustes"
+                          ContentTemplate="{DataTemplate pages:SettingsPage}" />
+        </Tab>
+    </TabBar>
+</Shell>

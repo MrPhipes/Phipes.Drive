@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Phipes.Drive.App.Pages.MainPage"
+             Title="Respaldo">
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="12">
+
+            <Label Text="Carpetas a respaldar" FontSize="18" FontAttributes="Bold" />
+
+            <VerticalStackLayout x:Name="FoldersList" Spacing="6" />
+
+            <Button Text="Agregar carpeta"
+                    BackgroundColor="{StaticResource Accent}"
+                    Clicked="OnAddFolderClicked" />
+
+            <BoxView HeightRequest="1" Color="#DDE3EA" Margin="0,10" />
+
+            <Button x:Name="BackupButton"
+                    Text="Respaldar ahora"
+                    FontSize="18"
+                    Clicked="OnBackupClicked" />
+            <Button x:Name="CancelButton"
+                    Text="Cancelar"
+                    BackgroundColor="{StaticResource Danger}"
+                    IsVisible="False"
+                    Clicked="OnCancelClicked" />
+
+            <VerticalStackLayout x:Name="ProgressPanel" IsVisible="False" Spacing="6">
+                <Label x:Name="ProgressFileLabel" FontAttributes="Bold" LineBreakMode="MiddleTruncation" />
+                <ProgressBar x:Name="FileProgressBar" ProgressColor="{StaticResource Primary}" />
+                <Label x:Name="ProgressBytesLabel" TextColor="{StaticResource TextMuted}" FontSize="13" />
+            </VerticalStackLayout>
+
+            <Border BackgroundColor="White"
+                    Stroke="#DDE3EA"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="14">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Último respaldo" FontAttributes="Bold" />
+                    <Label x:Name="LastRunLabel" TextColor="{StaticResource TextMuted}" FontSize="13" />
+                    <Label x:Name="SummaryLabel" FontSize="14" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Label x:Name="ErrorsLabel"
+                   TextColor="{StaticResource Danger}"
+                   FontSize="13"
+                   IsVisible="False" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

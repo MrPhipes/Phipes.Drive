@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Phipes.Drive.App.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <Color x:Key="Primary">#1565C0</Color>
+            <Color x:Key="PrimaryDark">#0D47A1</Color>
+            <Color x:Key="Accent">#42A5F5</Color>
+            <Color x:Key="PageBackground">#F5F7FA</Color>
+            <Color x:Key="TextMuted">#6B7280</Color>
+            <Color x:Key="Danger">#C62828</Color>
+
+            <Style TargetType="ContentPage" ApplyToDerivedTypes="True">
+                <Setter Property="BackgroundColor" Value="{StaticResource PageBackground}" />
+            </Style>
+
+            <Style TargetType="Button">
+                <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                <Setter Property="TextColor" Value="White" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="14,10" />
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="VisualStateManager.VisualStateGroups">
+                    <VisualStateGroupList>
+                        <VisualStateGroup x:Name="CommonStates">
+                            <VisualState x:Name="Normal" />
+                            <VisualState x:Name="Disabled">
+                                <VisualState.Setters>
+                                    <Setter Property="BackgroundColor" Value="#9E9E9E" />
+                                </VisualState.Setters>
+                            </VisualState>
+                        </VisualStateGroup>
+                    </VisualStateGroupList>
+                </Setter>
+            </Style>
+
+            <Style TargetType="Entry">
+                <Setter Property="BackgroundColor" Value="White" />
+                <Setter Property="TextColor" Value="#111827" />
+                <Setter Property="PlaceholderColor" Value="{StaticResource TextMuted}" />
+            </Style>
+
+            <Style TargetType="Label">
+                <Setter Property="TextColor" Value="#111827" />
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

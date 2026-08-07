@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Phipes.Drive.App.Pages.LoginPage"
+             Title="Iniciar sesión">
+    <ScrollView>
+        <VerticalStackLayout Padding="28" Spacing="14" VerticalOptions="Center">
+
+            <Label Text="Phipes Drive"
+                   FontSize="32"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource Primary}"
+                   HorizontalOptions="Center" />
+            <Label Text="Respalda tus fotos en tu propio servidor"
+                   TextColor="{StaticResource TextMuted}"
+                   HorizontalOptions="Center"
+                   Margin="0,0,0,20" />
+
+            <Label Text="Servidor" FontAttributes="Bold" />
+            <Entry x:Name="ServerEntry"
+                   Placeholder="https://drive.phipes.cl"
+                   Keyboard="Url" />
+
+            <Label Text="Correo" FontAttributes="Bold" />
+            <Entry x:Name="EmailEntry"
+                   Placeholder="tucorreo@ejemplo.com"
+                   Keyboard="Email" />
+
+            <Label Text="Contraseña" FontAttributes="Bold" />
+            <Entry x:Name="PasswordEntry"
+                   Placeholder="Contraseña"
+                   IsPassword="True" />
+
+            <Label x:Name="ErrorLabel"
+                   TextColor="{StaticResource Danger}"
+                   IsVisible="False" />
+
+            <Button x:Name="LoginButton"
+                    Text="Iniciar sesión"
+                    Margin="0,10,0,0"
+                    Clicked="OnLoginClicked" />
+
+            <ActivityIndicator x:Name="Busy" IsRunning="False" IsVisible="False" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

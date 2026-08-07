@@ -105,12 +105,38 @@ Storage location and limits are configured in `appsettings.json` (defaults to a 
 
 In production, point `RootPath` at a mounted volume (e.g. `/data` in Docker).
 
+## Mobile app
+
+`src/Phipes.Drive.App` is a .NET MAUI app (Android-first) that backs up the
+phone's photos and videos to the server: it enumerates the selected MediaStore
+folders (DCIM/Camera by default), uploads each file to
+`Camera/<yyyy>/<MM>/<name>` in resumable 64 MB chunks via the file API, skips
+files already uploaded, and resumes partial uploads. It includes a Wi-Fi-only
+toggle and an hourly WorkManager background backup.
+
+The app is **intentionally not part of `Phipes.Drive.slnx`**: the solution is
+built by CI and server machines that do not have the MAUI workloads installed.
+Build the app directly against its project file instead:
+
+```bash
+# Requirements: .NET 10 SDK + Android/MAUI workloads (dotnet workload install maui-android)
+dotnet build src/Phipes.Drive.App/Phipes.Drive.App.csproj -f net10.0-android
+
+# Sideloadable APK (debug-signed)
+dotnet publish src/Phipes.Drive.App/Phipes.Drive.App.csproj -f net10.0-android -c Release
+```
+
+The `net10.0-ios` target is declared for future work but only activates on a
+macOS host with the `maui-ios` workload; the iOS media library backend is not
+implemented yet.
+
 ## Project layout
 
 ```
 src/
   Phipes.Drive.Core   # Domain: entities, storage abstractions
   Phipes.Drive.Web    # Blazor Server web app
+  Phipes.Drive.App    # .NET MAUI mobile backup app (not in the solution; see above)
 tests/
   Phipes.Drive.Tests  # Unit tests
 ```
