@@ -8,10 +8,16 @@ public interface IFileStorage
 {
     Task<IReadOnlyList<StorageItem>> ListAsync(string relativePath, CancellationToken ct = default);
 
+    /// <summary>Returns the item at the given path, or null if nothing exists there.</summary>
+    Task<StorageItem?> StatAsync(string relativePath, CancellationToken ct = default);
+
     Task<Stream> OpenReadAsync(string relativePath, CancellationToken ct = default);
 
     /// <summary>Writes <paramref name="content"/> to the given path, overwriting if it exists.</summary>
     Task SaveAsync(string relativePath, Stream content, CancellationToken ct = default);
+
+    /// <summary>Appends <paramref name="content"/> to an existing file (chunked/resumable uploads).</summary>
+    Task AppendAsync(string relativePath, Stream content, CancellationToken ct = default);
 
     Task CreateFolderAsync(string relativePath, CancellationToken ct = default);
 

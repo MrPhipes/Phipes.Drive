@@ -43,6 +43,23 @@ public sealed class FileSystemStorage : IFileStorage
         return Task.FromResult(result);
     }
 
+    public Task<StorageItem?> StatAsync(string relativePath, CancellationToken ct = default)
+    {
+        var path = Resolve(relativePath);
+        StorageItem? item = null;
+        if (Directory.Exists(path))
+        {
+            var d = new DirectoryInfo(path);
+            item = new StorageItem(d.Name, ToRelative(path), true, 0, d.LastWriteTimeUtc);
+        }
+        else if (File.Exists(path))
+        {
+            var f = new FileInfo(path);
+            item = new StorageItem(f.Name, ToRelative(path), false, f.Length, f.LastWriteTimeUtc);
+        }
+        return Task.FromResult(item);
+    }
+
     public Task<Stream> OpenReadAsync(string relativePath, CancellationToken ct = default)
     {
         var path = ResolveFile(relativePath);
@@ -82,6 +99,14 @@ public sealed class FileSystemStorage : IFileStorage
             if (File.Exists(temp)) File.Delete(temp);
             throw;
         }
+    }
+
+    public async Task AppendAsync(string relativePath, Stream content, CancellationToken ct = default)
+    {
+        var path = ResolveFile(relativePath);
+        await using var target = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.None,
+            bufferSize: 81920, useAsync: true);
+        await content.CopyToAsync(target, ct).ConfigureAwait(false);
     }
 
     public Task CreateFolderAsync(string relativePath, CancellationToken ct = default)

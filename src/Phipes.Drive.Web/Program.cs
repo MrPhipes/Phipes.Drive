@@ -7,6 +7,9 @@ using Phipes.Drive.Web.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Chunked uploads from mobile clients: allow bodies up to 256 MB per request.
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 256L * 1024 * 1024);
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddCascadingAuthenticationState();
@@ -104,6 +107,39 @@ app.MapPost("/auth/logout", async (SignInManager<AppUser> signIn) =>
     await signIn.SignOutAsync();
     return Results.LocalRedirect("/login");
 });
+
+// File API for mobile/script clients (bearer or cookie). The storage layer validates paths.
+app.MapGet("/api/files/stat", async (string path, IFileStorage storage, CancellationToken ct) =>
+{
+    try
+    {
+        var item = await storage.StatAsync(path, ct);
+        return item is null
+            ? Results.Ok(new { exists = false })
+            : Results.Ok(new { exists = true, item.IsFolder, item.SizeBytes, item.ModifiedUtc });
+    }
+    catch (StoragePathException) { return Results.BadRequest(); }
+}).RequireAuthorization();
+
+app.MapPost("/api/files", async (string path, bool? overwrite, bool? append, HttpRequest request, IFileStorage storage, CancellationToken ct) =>
+{
+    try
+    {
+        if (append is true)
+        {
+            await storage.AppendAsync(path, request.Body, ct);
+            var appended = await storage.StatAsync(path, ct);
+            return Results.Ok(new { path, appended!.SizeBytes });
+        }
+        if (overwrite is not true && await storage.StatAsync(path, ct) is not null)
+            return Results.Conflict(new { error = "El archivo ya existe.", path });
+        await storage.SaveAsync(path, request.Body, ct);
+        var saved = await storage.StatAsync(path, ct);
+        return Results.Created($"/api/download?path={Uri.EscapeDataString(path)}", new { path, saved!.SizeBytes });
+    }
+    catch (StoragePathException) { return Results.BadRequest(); }
+    catch (StorageQuotaExceededException) { return Results.StatusCode(StatusCodes.Status507InsufficientStorage); }
+}).RequireAuthorization().DisableAntiforgery();
 
 // Streamed download endpoint; the storage layer validates the path.
 app.MapGet("/api/download", async (string path, IFileStorage storage, CancellationToken ct) =>

@@ -81,6 +81,29 @@ public sealed class FileSystemStorageTests : IDisposable
     }
 
     [Fact]
+    public async Task Stat_reports_files_folders_and_absence()
+    {
+        await _storage.SaveAsync("docs/a.txt", Bytes("hola"));
+        var file = await _storage.StatAsync("docs/a.txt");
+        Assert.NotNull(file);
+        Assert.False(file!.IsFolder);
+        Assert.Equal(4, file.SizeBytes);
+        var folder = await _storage.StatAsync("docs");
+        Assert.True(folder!.IsFolder);
+        Assert.Null(await _storage.StatAsync("no-existe.bin"));
+    }
+
+    [Fact]
+    public async Task Append_extends_existing_file_for_chunked_uploads()
+    {
+        await _storage.SaveAsync("video.bin", Bytes("chunk1-"));
+        await _storage.AppendAsync("video.bin", Bytes("chunk2"));
+        await using var stream = await _storage.OpenReadAsync("video.bin");
+        using var reader = new StreamReader(stream);
+        Assert.Equal("chunk1-chunk2", await reader.ReadToEndAsync());
+    }
+
+    [Fact]
     public async Task Quota_blocks_uploads_that_exceed_it()
     {
         var limited = new FileSystemStorage(new StorageOptions
