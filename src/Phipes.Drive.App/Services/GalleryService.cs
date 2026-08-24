@@ -114,7 +114,7 @@ public sealed class GalleryService(IMediaLibrary media, RemotePhotoIndex index, 
                     IsVideo = existing.IsVideo || photo.IsVideo,
                     Local = existing.Local,
                     RemoteId = photo.Id,
-                    DurationMs = photo.DurationMs,
+                    DurationMs = photo.DurationMs ?? 0,
                     KnownBackedUp = existing.KnownBackedUp,
                 };
                 continue;
@@ -128,7 +128,7 @@ public sealed class GalleryService(IMediaLibrary media, RemotePhotoIndex index, 
                 TakenLocal = photo.TakenUtc.ToLocalTime().DateTime,
                 IsVideo = photo.IsVideo,
                 RemoteId = photo.Id,
-                DurationMs = photo.DurationMs,
+                DurationMs = photo.DurationMs ?? 0,
             };
         }
 

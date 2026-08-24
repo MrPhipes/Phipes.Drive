@@ -16,10 +16,10 @@ public sealed record PhotoDto(
     string Path,
     DateTimeOffset TakenUtc,
     long SizeBytes,
-    int Width,
-    int Height,
+    int? Width,
+    int? Height,
     bool IsVideo,
-    long DurationMs,
+    long? DurationMs,
     bool HasThumb);
 
 /// <summary>One page of the remote photo index, newest first.</summary>
