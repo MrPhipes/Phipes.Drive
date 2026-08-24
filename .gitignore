@@ -487,8 +487,9 @@ $RECYCLE.BIN/
 *.db-shm
 *.db-wal
 
-# Phipes Drive local dev storage
-storage/
-
-# Generated photo thumbnails (kept outside the user storage tree)
-thumbs/
+# Phipes Drive local dev data. Anchored so the bare names never swallow source
+# folders such as src/Phipes.Drive.Core/Storage on case-insensitive filesystems.
+/storage/
+/thumbs/
+/src/Phipes.Drive.Web/storage/
+/src/Phipes.Drive.Web/thumbs/
