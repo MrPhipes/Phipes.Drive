@@ -18,9 +18,9 @@ Cloud storage subscriptions charge monthly for space you may already own. Phipes
 - Trash / restore
 
 **Phase 2 — Photos**
-- Timeline gallery with thumbnails
-- EXIF metadata extraction
-- Duplicate detection by content hash
+- Timeline gallery with thumbnails — done, see [Photos](#photos)
+- EXIF metadata extraction — done
+- Duplicate detection by content hash — done
 - Google Takeout import
 
 **Phase 3 — Mobile backup**
@@ -104,6 +104,95 @@ Storage location and limits are configured in `appsettings.json` (defaults to a 
 ```
 
 In production, point `RootPath` at a mounted volume (e.g. `/data` in Docker).
+
+## Photos
+
+A background service walks the storage tree, indexes every image
+(`jpg jpeg png heic webp gif`) and video (`mp4 mov 3gp mkv`) it finds, and
+builds thumbnails for them. It runs a few seconds after startup and then every
+15 minutes, without blocking application start.
+
+For each file it stores the SHA-256 of the content, the capture date (EXIF
+`DateTimeOriginal`, falling back to the file's modification time), pixel
+dimensions, GPS coordinates when present, and video duration. **The hash is the
+identity**: the same bytes under two different paths produce a single timeline
+entry. Scans are incremental — a file whose path, size and modification time
+already match the index is never read again.
+
+Thumbnails are JPEG (quality 80) at 256 px and 1024 px on the longest side,
+with EXIF orientation applied. They are written **outside** the storage root so
+they never show up in the file browser:
+
+```
+<ThumbsPath>/<first 2 chars of hash>/<hash>_<size>.jpg
+```
+
+`ThumbsPath` defaults to a `thumbs/` folder next to `Storage:RootPath`, and the
+Docker image sets it to `/data/thumbs`. Video poster frames (and HEIC decoding)
+need `ffmpeg`, which is installed in the image; without it those items are
+simply indexed with no thumbnail instead of failing.
+
+```json
+{
+  "Photos": {
+    "Enabled": true,
+    "ThumbsPath": null,
+    "ScanIntervalMinutes": 15,
+    "FfmpegPath": "ffmpeg",
+    "FfprobePath": "ffprobe",
+    "VideoFrameSeconds": 1,
+    "JpegQuality": 80
+  }
+}
+```
+
+### Gallery API
+
+All endpoints require authentication (cookie or bearer token).
+
+```bash
+# Timeline, newest capture first.
+# "since" is an ISO-8601 instant compared against the server's index time, so a
+# client can pull only what is new to it, including old photos imported late.
+curl -H "Authorization: Bearer <accessToken>" \
+  "http://localhost:5000/api/photos?since=2026-08-01T00:00:00Z&skip=0&take=200"
+```
+
+```json
+{
+  "total": 1842,
+  "items": [
+    {
+      "id": "2758653646130c330dfa6b8722f31fab93867dc243a33e466b3f60e6b45b32fc",
+      "name": "IMG_20260824_140311.jpg",
+      "path": "Camera/2026/08/IMG_20260824_140311.jpg",
+      "takenUtc": "2026-08-24T17:03:11+00:00",
+      "sizeBytes": 3145728,
+      "width": 4032,
+      "height": 3024,
+      "isVideo": false,
+      "durationMs": null,
+      "hasThumb": true
+    }
+  ]
+}
+```
+
+| Endpoint | Notes |
+| --- | --- |
+| `GET /api/photos?since=&skip=0&take=200` | Timeline page, ordered by `takenUtc` descending. `take` is capped at 500. |
+| `GET /api/photos/{id}/thumb?size=256\|1024` | `image/jpeg` with an `ETag` and `Cache-Control: private, max-age=31536000, immutable` — the id is the content hash, so the bytes can never change. Missing thumbnails are generated on the spot; `404` when the file cannot be decoded. |
+| `GET /api/photos/{id}/original` | The original bytes, with range requests and `Content-Disposition: inline`. |
+| `POST /api/photos/reindex` | Triggers an immediate scan and returns `202`. |
+
+`/api/download`, `/api/photos/*/thumb` and `/api/photos/*/original` all send
+`X-Content-Type-Options: nosniff`.
+
+### Web gallery
+
+`/fotos` shows the same timeline in the browser: a grid of 256 px thumbnails
+grouped by month, loaded in pages, with a viewer that shows the 1024 px render
+(or plays the video) and links to the original.
 
 ## Mobile app
 

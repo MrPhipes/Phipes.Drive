@@ -17,6 +17,7 @@
                 @FormatSize(_usage.UsedBytes) usados@(_usage.QuotaBytes is { } q ? $" de {FormatSize(q)}" : "")
             </span>
         }
+        <a class="nav-link" href="/fotos">Fotos</a>
         <form method="post" action="/auth/logout" class="logout-form">
             <AntiforgeryToken />
             <button type="submit" class="logout">Salir</button>

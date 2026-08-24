@@ -4,7 +4,7 @@ namespace Phipes.Drive.Core.Storage;
 /// <see cref="IFileStorage"/> backed by a directory tree on a local or mounted filesystem
 /// (e.g. a NAS dataset). All paths are validated so they can never escape the root.
 /// </summary>
-public sealed class FileSystemStorage : IFileStorage
+public sealed class FileSystemStorage : IFileStorage, ILocalFileStorage
 {
     private readonly string _root;
     private readonly string _trashRoot;
@@ -41,6 +41,44 @@ public sealed class FileSystemStorage : IFileStorage
             .ThenBy(i => i.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
         return Task.FromResult(result);
+    }
+
+    public async IAsyncEnumerable<StorageItem> EnumerateFilesAsync(
+        string relativePath,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    {
+        var dir = ResolveDirectory(relativePath);
+        var enumeration = new EnumerationOptions
+        {
+            RecurseSubdirectories = true,
+            IgnoreInaccessible = true,
+            AttributesToSkip = FileAttributes.ReparsePoint,
+        };
+
+        foreach (var file in new DirectoryInfo(dir).EnumerateFiles("*", enumeration))
+        {
+            ct.ThrowIfCancellationRequested();
+            if (IsUnderTrash(file.FullName)) continue;
+            if (file.Name.EndsWith(".uploading", StringComparison.OrdinalIgnoreCase)) continue;
+            yield return new StorageItem(file.Name, ToRelative(file.FullName), false, file.Length,
+                file.LastWriteTimeUtc);
+        }
+
+        await Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public string? TryGetPhysicalPath(string relativePath)
+    {
+        try
+        {
+            var path = Resolve(relativePath);
+            return File.Exists(path) ? path : null;
+        }
+        catch (StoragePathException)
+        {
+            return null;
+        }
     }
 
     public Task<StorageItem?> StatAsync(string relativePath, CancellationToken ct = default)
@@ -184,6 +222,10 @@ public sealed class FileSystemStorage : IFileStorage
             total += f.Length;
         return total;
     }
+
+    private bool IsUnderTrash(string fullPath) =>
+        Path.GetFullPath(fullPath).StartsWith(_trashRoot + Path.DirectorySeparatorChar,
+            StringComparison.OrdinalIgnoreCase);
 
     private bool IsTrash(string fullPath) =>
         string.Equals(Path.GetFullPath(fullPath), _trashRoot, StringComparison.OrdinalIgnoreCase);

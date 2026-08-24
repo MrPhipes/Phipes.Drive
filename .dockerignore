@@ -32,3 +32,4 @@ docker-compose*.yml
 README.md
 LICENSE
 tests/
+thumbs/

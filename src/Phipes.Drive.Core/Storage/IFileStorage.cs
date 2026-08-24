@@ -8,6 +8,12 @@ public interface IFileStorage
 {
     Task<IReadOnlyList<StorageItem>> ListAsync(string relativePath, CancellationToken ct = default);
 
+    /// <summary>
+    /// Streams every file below <paramref name="relativePath"/>, recursively, skipping the trash.
+    /// Folders are not yielded. Used by the photo indexer to walk the whole tree cheaply.
+    /// </summary>
+    IAsyncEnumerable<StorageItem> EnumerateFilesAsync(string relativePath, CancellationToken ct = default);
+
     /// <summary>Returns the item at the given path, or null if nothing exists there.</summary>
     Task<StorageItem?> StatAsync(string relativePath, CancellationToken ct = default);
 

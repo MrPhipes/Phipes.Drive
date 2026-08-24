@@ -489,3 +489,6 @@ $RECYCLE.BIN/
 
 # Phipes Drive local dev storage
 storage/
+
+# Generated photo thumbnails (kept outside the user storage tree)
+thumbs/

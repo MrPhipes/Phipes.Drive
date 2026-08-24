@@ -1,0 +1,153 @@
+@page "/fotos"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using System.Globalization
+@using Phipes.Drive.Web.Photos
+@inject PhotoQueryService Photos
+
+<PageTitle>Fotos — Phipes Drive</PageTitle>
+
+<header class="drive-header">
+    <h1>Fotos</h1>
+    <span class="header-right">
+        <span class="usage">@_total @(_total == 1 ? "elemento" : "elementos")</span>
+        <a class="nav-link" href="/">Archivos</a>
+        <form method="post" action="/auth/logout" class="logout-form">
+            <AntiforgeryToken />
+            <button type="submit" class="logout">Salir</button>
+        </form>
+    </span>
+</header>
+
+@if (_loaded.Count == 0 && !_loading)
+{
+    <p class="status">
+        Todavía no hay fotos indexadas. El servidor revisa el almacenamiento cada pocos minutos;
+        sube imágenes o vídeos y vuelve a esta página.
+    </p>
+}
+
+@foreach (var month in Months)
+{
+    <h2 class="month">@MonthLabel(month.Key)</h2>
+    <div class="photo-grid">
+        @foreach (var photo in month)
+        {
+            <button type="button" class="photo-cell" title="@photo.Name" @onclick="() => Open(photo)">
+                @if (photo.HasThumb)
+                {
+                    <img src="@ThumbUrl(photo.Id, 256)" alt="@photo.Name" loading="lazy" decoding="async" />
+                }
+                else
+                {
+                    <span class="photo-placeholder">@(photo.IsVideo ? "🎬" : "🖼")</span>
+                }
+                @if (photo.IsVideo)
+                {
+                    <span class="photo-badge">▶ @Duration(photo.DurationMs)</span>
+                }
+            </button>
+        }
+    </div>
+}
+
+@if (_loaded.Count < _total)
+{
+    <div class="load-more">
+        <button @onclick="LoadMoreAsync" disabled="@_loading">
+            @(_loading ? "Cargando…" : $"Cargar más ({_loaded.Count} de {_total})")
+        </button>
+    </div>
+}
+
+@if (_current is { } current)
+{
+    <div class="viewer" @onclick="Close">
+        <div class="viewer-body" @onclick:stopPropagation="true">
+            @if (current.IsVideo)
+            {
+                <video src="@OriginalUrl(current.Id)" controls autoplay playsinline></video>
+            }
+            else
+            {
+                <img src="@ThumbUrl(current.Id, 1024)" alt="@current.Name" />
+            }
+            <div class="viewer-bar">
+                <span class="viewer-name">@current.Name</span>
+                <span class="viewer-meta">
+                    @current.TakenUtc.ToLocalTime().ToString("g", Culture)
+                    @if (current.Width is { } w && current.Height is { } h)
+                    {
+                        <text> · @w×@h</text>
+                    }
+                    · @FormatSize(current.SizeBytes)
+                </span>
+                <a class="viewer-download" href="@OriginalUrl(current.Id)" download="@current.Name">
+                    Descargar original
+                </a>
+                <button class="viewer-close" @onclick="Close">Cerrar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private const int PageSize = 120;
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("es-CL");
+
+    private readonly List<PhotoDto> _loaded = [];
+    private int _total;
+    private bool _loading;
+    private PhotoDto? _current;
+
+    private IEnumerable<IGrouping<DateTime, PhotoDto>> Months =>
+        _loaded.GroupBy(p => FirstOfMonth(p.TakenUtc));
+
+    protected override Task OnInitializedAsync() => LoadMoreAsync();
+
+    private async Task LoadMoreAsync()
+    {
+        if (_loading) return;
+        _loading = true;
+        try
+        {
+            var page = await Photos.ListAsync(null, _loaded.Count, PageSize);
+            _total = page.Total;
+            _loaded.AddRange(page.Items);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void Open(PhotoDto photo) => _current = photo;
+
+    private void Close() => _current = null;
+
+    private static DateTime FirstOfMonth(DateTimeOffset instant)
+    {
+        var local = instant.ToLocalTime();
+        return new DateTime(local.Year, local.Month, 1);
+    }
+
+    private static string MonthLabel(DateTime month) =>
+        month.ToString("MMMM 'de' yyyy", Culture);
+
+    private static string ThumbUrl(string id, int size) => $"/api/photos/{id}/thumb?size={size}";
+
+    private static string OriginalUrl(string id) => $"/api/photos/{id}/original";
+
+    private static string Duration(long? milliseconds) =>
+        milliseconds is { } ms and > 0
+            ? TimeSpan.FromMilliseconds(ms).ToString(ms >= 3_600_000 ? @"h\:mm\:ss" : @"m\:ss")
+            : "";
+
+    private static string FormatSize(long bytes) => bytes switch
+    {
+        >= 1L << 30 => $"{bytes / (double)(1L << 30):N2} GB",
+        >= 1L << 20 => $"{bytes / (double)(1L << 20):N1} MB",
+        >= 1L << 10 => $"{bytes / (double)(1L << 10):N0} KB",
+        _ => $"{bytes} B",
+    };
+}

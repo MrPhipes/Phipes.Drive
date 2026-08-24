@@ -4,7 +4,7 @@
 #      ADMIN_EMAIL=you@example.com
 #      ADMIN_PASSWORD=YourStrongPassword1
 # 2. Make sure the mounted folders are writable by UID 1654 (the non-root
-#    "app" user inside the image), e.g.: chown -R 1654:1654 ./storage ./db
+#    "app" user inside the image), e.g.: chown -R 1654:1654 ./storage ./db ./thumbs
 # 3. Run: docker compose up -d
 
 services:
@@ -17,6 +17,8 @@ services:
     environment:
       # Where user files are stored (inside the container)
       Storage__RootPath: /data/storage
+      # Generated photo thumbnails; deliberately outside the user's storage tree
+      Photos__ThumbsPath: /data/thumbs
       # SQLite database location (inside the container)
       ConnectionStrings__Default: "Data Source=/data/db/phipes-drive.db"
       # Admin user created on first run (values come from .env)
@@ -25,3 +27,4 @@ services:
     volumes:
       - ./storage:/data/storage
       - ./db:/data/db
+      - ./thumbs:/data/thumbs

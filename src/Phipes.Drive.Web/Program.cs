@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Net.Http.Headers;
+using Phipes.Drive.Core.Photos;
 using Phipes.Drive.Core.Storage;
 using Phipes.Drive.Web.Components;
 using Phipes.Drive.Web.Data;
+using Phipes.Drive.Web.Photos;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,13 +53,54 @@ var storageOptions = builder.Configuration
 builder.Services.AddSingleton(storageOptions);
 builder.Services.AddSingleton<IFileStorage, FileSystemStorage>();
 
+// ---- Photo pipeline ----
+// Thumbnails live outside the storage root so they never appear in the user's file browser.
+var photoOptions = builder.Configuration
+    .GetSection(PhotoOptions.SectionName)
+    .Get<PhotoOptions>() ?? new PhotoOptions();
+var thumbsRoot = ThumbnailPaths.ResolveRoot(storageOptions.RootPath, photoOptions.ThumbsPath);
+
+builder.Services.AddSingleton(photoOptions);
+builder.Services.AddSingleton(new Ffmpeg(photoOptions));
+builder.Services.AddSingleton<IPhotoMetadataReader>(sp =>
+    new ExifPhotoMetadataReader(sp.GetRequiredService<Ffmpeg>()));
+builder.Services.AddSingleton<IThumbnailGenerator>(sp =>
+    new ThumbnailGenerator(photoOptions, sp.GetRequiredService<Ffmpeg>(), thumbsRoot));
+builder.Services.AddSingleton<ThumbnailQueue>();
+builder.Services.AddSingleton<IThumbnailQueue>(sp => sp.GetRequiredService<ThumbnailQueue>());
+builder.Services.AddSingleton<PhotoScanTrigger>();
+builder.Services.AddSingleton<PhotoQueryService>();
+builder.Services.AddSingleton(sp => new ThumbnailService(
+    sp.GetRequiredService<IFileStorage>(),
+    sp.GetRequiredService<IThumbnailGenerator>(),
+    sp.GetRequiredService<IServiceScopeFactory>(),
+    thumbsRoot,
+    sp.GetRequiredService<ILogger<ThumbnailService>>()));
+
+builder.Services.AddScoped<IPhotoStore, EfPhotoStore>();
+builder.Services.AddScoped(sp => new PhotoIndexer(
+    sp.GetRequiredService<IFileStorage>(),
+    sp.GetRequiredService<IPhotoStore>(),
+    sp.GetRequiredService<IPhotoMetadataReader>(),
+    sp.GetRequiredService<IThumbnailQueue>(),
+    sp.GetRequiredService<ILogger<PhotoIndexer>>(),
+    thumbsRoot));
+
+builder.Services.AddHostedService<PhotoIndexBackgroundService>();
+builder.Services.AddHostedService<ThumbnailBackgroundService>();
+
 var app = builder.Build();
+
+Directory.CreateDirectory(thumbsRoot);
 
 // First-run setup: create the database and the admin user declared in configuration.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
+    // EnsureCreated is a no-op on databases that already exist, so tables added after the first
+    // release need their own idempotent bootstrap.
+    await PhotoSchema.EnsureAsync(db);
 
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
     if (!userManager.Users.Any())
@@ -142,7 +186,7 @@ app.MapPost("/api/files", async (string path, bool? overwrite, bool? append, Htt
 }).RequireAuthorization().DisableAntiforgery();
 
 // Streamed download endpoint; the storage layer validates the path.
-app.MapGet("/api/download", async (string path, IFileStorage storage, CancellationToken ct) =>
+NoSniff(app.MapGet("/api/download", async (string path, IFileStorage storage, CancellationToken ct) =>
 {
     try
     {
@@ -156,10 +200,80 @@ app.MapGet("/api/download", async (string path, IFileStorage storage, Cancellati
     {
         return Results.NotFound();
     }
-}).RequireAuthorization();
+})).RequireAuthorization();
+
+// ---- Photo gallery API ----
+var photos = app.MapGroup("/api/photos").RequireAuthorization();
+
+// Timeline, newest capture first. "since" filters on IndexedUtc so a client can pull only what
+// the server has learned since its last sync, including old photos imported late.
+photos.MapGet("", async (
+    DateTimeOffset? since, int? skip, int? take, PhotoQueryService query, CancellationToken ct) =>
+    Results.Ok(await query.ListAsync(since, skip ?? 0, take ?? 200, ct)));
+
+NoSniff(photos.MapGet("/{id}/thumb", async (
+    string id, int? size, PhotoQueryService query, ThumbnailService thumbnails,
+    HttpContext http, CancellationToken ct) =>
+{
+    var requested = size ?? ThumbnailPaths.SmallSize;
+    if (!ThumbnailPaths.IsSupportedSize(requested))
+        return Results.BadRequest(new { error = "size must be 256 or 1024." });
+
+    if (await query.GetAsync(id, ct) is not { } item) return Results.NotFound();
+
+    var file = await thumbnails.EnsureAsync(item, requested, ct);
+    if (file is null) return Results.NotFound();
+
+    // The hash is the content, so a thumbnail can never change under the same URL.
+    http.Response.Headers.CacheControl = "private, max-age=31536000, immutable";
+    return Results.File(file, "image/jpeg",
+        entityTag: new EntityTagHeaderValue($"\"{item.Hash}-{requested}\""));
+}));
+
+NoSniff(photos.MapGet("/{id}/original", async (
+    string id, PhotoQueryService query, IFileStorage storage, HttpContext http, CancellationToken ct) =>
+{
+    if (await query.GetAsync(id, ct) is not { } item) return Results.NotFound();
+
+    try
+    {
+        var stream = await storage.OpenReadAsync(item.Path, ct);
+        if (!new FileExtensionContentTypeProvider().TryGetContentType(item.Name, out var contentType))
+            contentType = "application/octet-stream";
+
+        // Inline so the browser and the mobile viewer render it instead of downloading it.
+        http.Response.Headers.ContentDisposition =
+            new ContentDispositionHeaderValue("inline") { FileNameStar = item.Name }.ToString();
+        http.Response.Headers.CacheControl = "private, max-age=31536000, immutable";
+
+        return Results.Stream(stream, contentType,
+            lastModified: item.ModifiedUtc,
+            entityTag: new EntityTagHeaderValue($"\"{item.Hash}\""),
+            enableRangeProcessing: true);
+    }
+    catch (Exception e) when (e is FileNotFoundException or StoragePathException)
+    {
+        return Results.NotFound();
+    }
+}));
+
+photos.MapPost("/reindex", (PhotoScanTrigger trigger) =>
+{
+    trigger.RequestScan();
+    return Results.Accepted();
+}).DisableAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+return;
+
+// Blocks content-type sniffing on endpoints that stream user-supplied bytes.
+static RouteHandlerBuilder NoSniff(RouteHandlerBuilder builder) =>
+    builder.AddEndpointFilter(async (context, next) =>
+    {
+        context.HttpContext.Response.Headers.XContentTypeOptions = "nosniff";
+        return await next(context);
+    });
