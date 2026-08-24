@@ -57,8 +57,9 @@ public sealed class ThumbnailLoader(ThumbnailStore store)
             old = _cts;
             _cts = new CancellationTokenSource();
         }
+        // Not disposed on purpose: workers still hold this token, and cancelling a disposed
+        // source turns every in-flight request into an ObjectDisposedException.
         old.Cancel();
-        old.Dispose();
     }
 
     private void PumpWorkers()
