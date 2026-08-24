@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Phipes.Drive.App.ViewModels"
+             x:Class="Phipes.Drive.App.Pages.GalleryPage"
+             x:Name="Page"
+             Title="Galería">
+    <Grid RowDefinitions="Auto,*">
+
+        <Border x:Name="NoticeBanner"
+                Grid.Row="0"
+                IsVisible="False"
+                BackgroundColor="#FFF4E0"
+                Stroke="#F0D9A8"
+                StrokeShape="RoundRectangle 8"
+                Padding="12,8"
+                Margin="10,8,10,0">
+            <Label x:Name="NoticeLabel"
+                   FontSize="13"
+                   TextColor="#7A5B12"
+                   LineBreakMode="WordWrap" />
+        </Border>
+
+        <RefreshView x:Name="Refresher"
+                     Grid.Row="1"
+                     RefreshColor="{StaticResource Primary}"
+                     Refreshing="OnRefreshing">
+            <CollectionView x:Name="ItemsView"
+                            IsGrouped="True"
+                            SelectionMode="None"
+                            ItemSizingStrategy="MeasureFirstItem">
+
+                <CollectionView.ItemsLayout>
+                    <GridItemsLayout Orientation="Vertical"
+                                     Span="3"
+                                     HorizontalItemSpacing="2"
+                                     VerticalItemSpacing="2" />
+                </CollectionView.ItemsLayout>
+
+                <CollectionView.GroupHeaderTemplate>
+                    <DataTemplate x:DataType="vm:MonthGroup">
+                        <Grid Padding="12,14,12,6" ColumnDefinitions="*,Auto">
+                            <Label Text="{Binding Title}"
+                                   FontSize="17"
+                                   FontAttributes="Bold" />
+                            <Label Grid.Column="1"
+                                   Text="{Binding CountText}"
+                                   FontSize="12"
+                                   VerticalOptions="Center"
+                                   TextColor="{StaticResource TextMuted}" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.GroupHeaderTemplate>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:GalleryItemVm">
+                        <Grid HeightRequest="{Binding TileHeight}"
+                              BackgroundColor="#E4E9F0">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnItemTapped" />
+                            </Grid.GestureRecognizers>
+
+                            <Image Source="{Binding Thumbnail}"
+                                   Aspect="AspectFill" />
+
+                            <!-- Subtle location badge: cloud when it is on the NAS,
+                                 amber arrow while it is still only on the phone. -->
+                            <Label Text="{Binding BadgeGlyph}"
+                                   TextColor="{Binding BadgeColor}"
+                                   FontSize="12"
+                                   Margin="0,3,5,0"
+                                   Opacity="0.9"
+                                   HorizontalOptions="End"
+                                   VerticalOptions="Start" />
+
+                            <Label Text="{Binding DurationText}"
+                                   IsVisible="{Binding HasDuration}"
+                                   TextColor="White"
+                                   FontSize="11"
+                                   Margin="5,0,0,3"
+                                   HorizontalOptions="Start"
+                                   VerticalOptions="End" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="30" Spacing="8" VerticalOptions="Center">
+                        <Label x:Name="EmptyTitle"
+                               Text="Sin fotos por ahora"
+                               FontSize="17"
+                               FontAttributes="Bold"
+                               HorizontalTextAlignment="Center" />
+                        <Label x:Name="EmptyDetail"
+                               Text="Cuando tomes fotos o cuando el NAS tenga contenido, aparecerán aquí."
+                               FontSize="13"
+                               TextColor="{StaticResource TextMuted}"
+                               HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+            </CollectionView>
+        </RefreshView>
+
+        <ActivityIndicator x:Name="Busy"
+                           Grid.Row="1"
+                           IsVisible="False"
+                           IsRunning="False"
+                           Color="{StaticResource Primary}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+    </Grid>
+</ContentPage>

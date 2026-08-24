@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Phipes.Drive.App.Pages.ViewerPage"
+             BackgroundColor="Black"
+             Title="Ver">
+    <Grid RowDefinitions="*,Auto">
+
+        <Grid x:Name="ZoomHost" Grid.Row="0" IsClippedToBounds="True">
+            <Grid.GestureRecognizers>
+                <PinchGestureRecognizer PinchUpdated="OnPinchUpdated" />
+                <PanGestureRecognizer PanUpdated="OnPanUpdated" />
+                <TapGestureRecognizer NumberOfTapsRequired="2" Tapped="OnDoubleTapped" />
+            </Grid.GestureRecognizers>
+
+            <Image x:Name="Preview"
+                   Aspect="AspectFit"
+                   AnchorX="0.5"
+                   AnchorY="0.5" />
+
+            <Button x:Name="PlayButton"
+                    Text="Reproducir"
+                    IsVisible="False"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    Clicked="OnPlayClicked" />
+
+            <ActivityIndicator x:Name="Busy"
+                               IsRunning="False"
+                               IsVisible="False"
+                               Color="White"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
+        </Grid>
+
+        <VerticalStackLayout Grid.Row="1"
+                             BackgroundColor="#101418"
+                             Padding="14,12"
+                             Spacing="8">
+            <Label x:Name="NameLabel"
+                   TextColor="White"
+                   FontAttributes="Bold"
+                   LineBreakMode="MiddleTruncation" />
+            <Label x:Name="InfoLabel"
+                   TextColor="#9FB3C8"
+                   FontSize="12" />
+
+            <VerticalStackLayout x:Name="DownloadPanel" IsVisible="False" Spacing="4">
+                <ProgressBar x:Name="DownloadBar" ProgressColor="{StaticResource Accent}" />
+                <Label x:Name="DownloadLabel"
+                       TextColor="#9FB3C8"
+                       FontSize="12" />
+            </VerticalStackLayout>
+
+            <HorizontalStackLayout Spacing="8">
+                <Button x:Name="ShareButton"
+                        Text="Compartir"
+                        Clicked="OnShareClicked" />
+                <Button x:Name="OriginalButton"
+                        Text="Ver original"
+                        BackgroundColor="{StaticResource Accent}"
+                        Clicked="OnOriginalClicked" />
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

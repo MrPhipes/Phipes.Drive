@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Exposes only the app cache folders that hold media pulled from the NAS. -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="originals" path="originals/" />
+    <cache-path name="thumbs" path="thumbs/" />
+</paths>

@@ -16,7 +16,9 @@ public class MainActivity : MauiAppCompatActivity
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
-        // Register (or keep) the hourly background backup.
+        // Notification channels must exist before the first backup posts anything.
+        BackupNotifications.EnsureChannels(this);
+        // Register (or keep) the background backup triggers.
         BackupScheduler.Schedule(this);
     }
 }

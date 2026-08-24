@@ -17,10 +17,15 @@
                   ContentTemplate="{DataTemplate pages:LoginPage}" />
 
     <TabBar>
-        <Tab Title="Respaldo">
+        <Tab Title="Galería">
             <ShellContent Route="main"
+                          Title="Galería"
+                          ContentTemplate="{DataTemplate pages:GalleryPage}" />
+        </Tab>
+        <Tab Title="Respaldo">
+            <ShellContent Route="backup"
                           Title="Respaldo"
-                          ContentTemplate="{DataTemplate pages:MainPage}" />
+                          ContentTemplate="{DataTemplate pages:BackupPage}" />
         </Tab>
         <Tab Title="Ajustes">
             <ShellContent Route="settings"

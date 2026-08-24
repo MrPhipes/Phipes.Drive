@@ -1,5 +1,6 @@
 using Android.Content;
 using Android.Database;
+using Android.Graphics;
 using Android.Provider;
 using Phipes.Drive.App.Services;
 using AndroidUri = Android.Net.Uri;
@@ -56,7 +57,7 @@ public sealed class MediaLibrary : IMediaLibrary
         });
 
     private static void QueryInto(
-        List<MediaItem> items, AndroidUri contentUri, string selection, string[] args, bool isVideo)
+        List<MediaItem> items, AndroidUri contentUri, string? selection, string[]? args, bool isVideo)
     {
         string[] projection =
         [
@@ -96,6 +97,37 @@ public sealed class MediaLibrary : IMediaLibrary
             items.Add(new MediaItem(itemUri.ToString()!, name, size, taken, isVideo));
         }
     }
+
+    public Task<IReadOnlyList<MediaItem>> GetAllItemsAsync() =>
+        Task.Run<IReadOnlyList<MediaItem>>(() =>
+        {
+            var items = new List<MediaItem>();
+            QueryInto(items, ImagesUri, null, null, isVideo: false);
+            QueryInto(items, VideosUri, null, null, isVideo: true);
+            // Newest first: that is how the gallery timeline reads.
+            items.Sort((a, b) => b.TakenLocal.CompareTo(a.TakenLocal));
+            return items;
+        });
+
+    public Task<byte[]?> GetThumbnailAsync(MediaItem item, int size) => Task.Run(() =>
+    {
+        try
+        {
+            // LoadThumbnail hits the MediaStore thumbnail cache: no full-size decode.
+            using var bitmap = Resolver.LoadThumbnail(
+                AndroidUri.Parse(item.Uri)!, new global::Android.Util.Size(size, size), null);
+            if (bitmap is null)
+                return null;
+            using var buffer = new MemoryStream();
+            bitmap.Compress(Bitmap.CompressFormat.Jpeg!, 82, buffer);
+            return buffer.ToArray();
+        }
+        catch (Exception)
+        {
+            // Missing file, revoked permission, unsupported codec: the grid shows a placeholder.
+            return (byte[]?)null;
+        }
+    });
 
     public Task<Stream> OpenReadAsync(MediaItem item)
     {

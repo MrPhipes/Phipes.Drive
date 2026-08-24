@@ -17,6 +17,15 @@ public interface IMediaLibrary
     /// <summary>All photos/videos inside the given folders (relative paths, no recursion).</summary>
     Task<IReadOnlyList<MediaItem>> GetItemsAsync(IReadOnlyCollection<string> folders);
 
+    /// <summary>Every photo/video on the device, newest first. Used by the gallery.</summary>
+    Task<IReadOnlyList<MediaItem>> GetAllItemsAsync();
+
+    /// <summary>
+    /// Square thumbnail as JPEG bytes, straight from the platform thumbnail cache
+    /// (no full-size decode). Returns null when the item has no thumbnail.
+    /// </summary>
+    Task<byte[]?> GetThumbnailAsync(MediaItem item, int size);
+
     /// <summary>Opens the item content for reading. The stream may not be seekable.</summary>
     Task<Stream> OpenReadAsync(MediaItem item);
 }
@@ -29,6 +38,12 @@ public sealed class NullMediaLibrary : IMediaLibrary
 
     public Task<IReadOnlyList<MediaItem>> GetItemsAsync(IReadOnlyCollection<string> folders) =>
         Task.FromResult<IReadOnlyList<MediaItem>>([]);
+
+    public Task<IReadOnlyList<MediaItem>> GetAllItemsAsync() =>
+        Task.FromResult<IReadOnlyList<MediaItem>>([]);
+
+    public Task<byte[]?> GetThumbnailAsync(MediaItem item, int size) =>
+        Task.FromResult<byte[]?>(null);
 
     public Task<Stream> OpenReadAsync(MediaItem item) =>
         throw new NotSupportedException("Media library no disponible en esta plataforma.");

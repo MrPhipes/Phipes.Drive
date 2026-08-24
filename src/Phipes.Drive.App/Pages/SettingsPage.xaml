@@ -41,9 +41,42 @@
                     Padding="14">
                 <VerticalStackLayout Spacing="4">
                     <Label Text="Respaldo automático" FontAttributes="Bold" />
-                    <Label Text="El respaldo se ejecuta en segundo plano aproximadamente cada hora cuando hay red permitida. Android puede espaciarlo para ahorrar batería."
+                    <Label Text="El respaldo corre solo, en segundo plano: cada hora con red permitida y también al conectar el teléfono al cargador con WiFi. Mientras sube, aparece una notificación con el avance."
                            TextColor="{StaticResource TextMuted}"
                            FontSize="13" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border BackgroundColor="White"
+                    Stroke="#DDE3EA"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="14">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Permitir respaldo en segundo plano" FontAttributes="Bold" />
+                    <Label Text="Android pausa las apps para ahorrar batería y eso puede cortar un respaldo largo. Con esta excepción activada, Phipes Drive puede terminar de subir aunque el teléfono esté en reposo."
+                           TextColor="{StaticResource TextMuted}"
+                           FontSize="13" />
+                    <Label x:Name="BatteryStatusLabel" FontSize="13" FontAttributes="Bold" />
+                    <Button x:Name="BatteryButton"
+                            Text="Permitir respaldo en segundo plano"
+                            Clicked="OnBatteryOptimizationClicked" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border BackgroundColor="White"
+                    Stroke="#DDE3EA"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="14">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Notificaciones" FontAttributes="Bold" />
+                    <Label Text="Se usan para mostrar el avance del respaldo y avisar cuando termina o falla."
+                           TextColor="{StaticResource TextMuted}"
+                           FontSize="13" />
+                    <Label x:Name="NotificationsStatusLabel" FontSize="13" FontAttributes="Bold" />
+                    <Button x:Name="NotificationsButton"
+                            Text="Activar notificaciones"
+                            BackgroundColor="{StaticResource Accent}"
+                            Clicked="OnNotificationsClicked" />
                 </VerticalStackLayout>
             </Border>
 

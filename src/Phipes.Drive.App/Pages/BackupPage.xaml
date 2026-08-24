@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="Phipes.Drive.App.Pages.MainPage"
+             x:Class="Phipes.Drive.App.Pages.BackupPage"
              Title="Respaldo">
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="12">
@@ -25,6 +25,11 @@
                     BackgroundColor="{StaticResource Danger}"
                     IsVisible="False"
                     Clicked="OnCancelClicked" />
+            <Button x:Name="RetryFailedButton"
+                    Text="Reintentar fallidos"
+                    BackgroundColor="{StaticResource Accent}"
+                    IsVisible="False"
+                    Clicked="OnRetryFailedClicked" />
 
             <VerticalStackLayout x:Name="ProgressPanel" IsVisible="False" Spacing="6">
                 <Label x:Name="ProgressFileLabel" FontAttributes="Bold" LineBreakMode="MiddleTruncation" />

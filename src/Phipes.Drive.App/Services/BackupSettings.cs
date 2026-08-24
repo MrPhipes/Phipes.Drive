@@ -9,6 +9,7 @@ public sealed class BackupSettings
     private const string FoldersKey = "backup.folders";
     private const string LastRunKey = "backup.last_run_unix";
     private const string LastResultKey = "backup.last_result";
+    private const string FailedKeysKey = "backup.failed_keys";
 
     public const string DefaultFolder = "DCIM/Camera";
 
@@ -70,6 +71,29 @@ public sealed class BackupSettings
     {
         get => Preferences.Default.Get(LastResultKey, string.Empty);
         set => Preferences.Default.Set(LastResultKey, value);
+    }
+
+    /// <summary>
+    /// Items that did not make it in the last pass, as name|size keys. They drive the
+    /// "Reintentar fallidos" button and are cleared as soon as a pass gets them through.
+    /// </summary>
+    public IReadOnlyList<string> FailedKeys
+    {
+        get
+        {
+            var json = Preferences.Default.Get(FailedKeysKey, string.Empty);
+            if (string.IsNullOrEmpty(json))
+                return [];
+            try
+            {
+                return JsonSerializer.Deserialize<string[]>(json) ?? [];
+            }
+            catch (JsonException)
+            {
+                return [];
+            }
+        }
+        set => Preferences.Default.Set(FailedKeysKey, JsonSerializer.Serialize(value.ToArray()));
     }
 
     private static string Normalize(string folder) =>
