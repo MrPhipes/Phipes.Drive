@@ -16,7 +16,7 @@ public sealed class PhotoOptions
     /// <summary>Minutes between incremental scans. The first scan runs shortly after startup.</summary>
     public int ScanIntervalMinutes { get; set; } = 15;
 
-    /// <summary>Executable used to decode video frames (and formats ImageSharp cannot read).</summary>
+    /// <summary>Executable used to decode video frames (and formats Skia cannot read).</summary>
     public string FfmpegPath { get; set; } = "ffmpeg";
 
     /// <summary>Executable used to read video duration. Optional; falls back to ffmpeg output parsing.</summary>
