@@ -18,7 +18,7 @@ RUN dotnet publish src/Phipes.Drive.Web/Phipes.Drive.Web.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
-# ffmpeg powers video poster frames and decodes image formats ImageSharp cannot read (HEIC).
+# ffmpeg powers video poster frames and decodes image formats Skia cannot read (HEIC).
 # The photo pipeline degrades gracefully without it, but thumbnails are much better with it.
 USER root
 RUN apt-get update \

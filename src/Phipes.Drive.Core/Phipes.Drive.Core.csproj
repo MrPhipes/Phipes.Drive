@@ -9,7 +9,8 @@
   <ItemGroup>
     <PackageReference Include="MetadataExtractor" Version="2.9.3" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.2.0" />
+    <PackageReference Include="SkiaSharp" Version="4.153.2" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.2" />
   </ItemGroup>
 
 </Project>

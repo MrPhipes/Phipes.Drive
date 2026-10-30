@@ -1,13 +1,13 @@
 using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
-using SixLabors.ImageSharp;
+using SkiaSharp;
 using Directory = MetadataExtractor.Directory;
 
 namespace Phipes.Drive.Core.Photos;
 
 /// <summary>
-/// Reads EXIF with MetadataExtractor (managed, no native dependencies), falls back to ImageSharp's
-/// header-only identify for dimensions, and to ffprobe for video duration.
+/// Reads EXIF with MetadataExtractor (managed, no native dependencies), falls back to Skia's
+/// header-only codec probe for dimensions, and to ffprobe for video duration.
 /// </summary>
 public sealed class ExifPhotoMetadataReader(Ffmpeg ffmpeg, TimeZoneInfo? assumedZone = null) : IPhotoMetadataReader
 {
@@ -69,8 +69,8 @@ public sealed class ExifPhotoMetadataReader(Ffmpeg ffmpeg, TimeZoneInfo? assumed
         try
         {
             await using var stream = await openRead(ct).ConfigureAwait(false);
-            var info = await Image.IdentifyAsync(stream, ct).ConfigureAwait(false);
-            return (info.Width, info.Height);
+            using var codec = SKCodec.Create(stream);
+            return codec is null ? (null, null) : (codec.Info.Width, codec.Info.Height);
         }
         catch
         {
